@@ -8,51 +8,6 @@
 {% block header %}
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/reports.css') }}">
     <script>
-        const downloadFile = (blob, fileName) => {
-          // Author David Norris (22690264),
-          const link = document.createElement('a');
-          // make blobURI that points to blob
-          link.href = URL.createObjectURL(blob);
-          link.download = fileName;
-          // for compatibility, some browsers require a link
-          document.body.append(link);
-          link.click();
-          link.remove();
-          // save memory if blob is using a lot
-          setTimeout(() => URL.revokeObjectURL(link.href), 7000);
-        };
-
-        const getChartPng = (studentID) => {
-            // Author David Norris (22690264)
-            let printWindow = window.open(`/reports/student/pdf/${studentID}`, '', 'height=1000,width=1000');
-            printWindow.onload = () => {
-                let chartImg = printWindow.document.getElementById('chartImage')
-                const awaitChart = () => {
-                    // we need the charts api to of converted image to uri in img.src
-                    if (chartImg.src === '') {
-                        // timeout to come back in 50 ms and don't exec until re-test
-                        setTimeout(awaitChart, 50);
-                        return;
-                    }
-                    fetch('/makepdf', {
-                        method: 'POST',
-                        headers: {
-                          'Accept': 'application/pdf',
-                          'Content-Type': 'text/html'
-                        },
-                        body: printWindow.document.getElementById('wrapper').innerHTML
-                    })
-                    .then((response) => {
-                        printWindow.close();
-                        return response.blob();
-                    })
-                    .then((data) => {
-                        downloadFile(data, `Report-${studentID}.pdf`);
-                    })
-                }
-                awaitChart();
-            };
-        }
 
         const searchFilterStudents = () => {
             // Author David Norris (22690264), Sean Ledesma (22752771)
@@ -106,7 +61,6 @@
         <td class="student-id-field">{{(student.id|string).zfill(8)}}</td>
         <td class="student-name-field">{{student.name}}</td>
         <td><a href='./student/{{student.id}}'><button class="makeReport">See Report</button></a></td>
-        <td><button onClick='getChartPng({{student.id}})' class="makePDF">Download PDF</button></td>
         <td><a href="./logs/{{student.id}}"><button class="seeLogs">See Logs</button></a></td>
     </tr>
     {%- endfor %}

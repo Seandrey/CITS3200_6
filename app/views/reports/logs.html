@@ -43,7 +43,7 @@
 <a href='/reports/student'><button class="backButton" style="float: right">Back to search</button></a>
     <h3>Activity Logs for {{data.student.name}} ({{(data.student.student_number|string).zfill(8)}})</h3>
     <h6>Double click a table cell to edit it, hit enter to exit editing mode.</h6>
-    <div class="card">
+    <div class="card" style="width: 300%">
         <table id="activity-log-table">
             <tr>
                 <th>Date</th>
@@ -53,18 +53,23 @@
                 <th>Category</th>
                 <th>Domain</th>
                 <th>Minutes</th>
+                <td>Activity Description:</td>
                 <th>Submit Changes</th>
             </tr>
             {% for log in logs %}
             <tr>
-                <td class="date-field">{{log.record_date}}</td>
-                <td class="select unit-field">{{log.unitid}}</td>
-                <td class="select location-field">{{log.locationid}}</td>
-                <td class="select supervisor-field">{{log.supervisorid}}</td>
-                <td class="select exercise-prescription-field">{{log.activityid}}</td>
-                <td class="select domain-field">{{log.domainid}}</td>
-                <td class="text-field minutes-field">{{log.minutes_spent}}</td>
+                <td id =rowDisplay class="date-field" style="text-align: center;">{{log.record_date}}</td>
+                <td id =rowDisplay class="select unit-field" style="text-align: center;">{{log.unitid}}</td>
+                <td class="select location-field" style="text-align: center;">{{log.locationid}}</td>
+                <td class="select supervisor-field" style="text-align: center;">{{log.supervisorid}}</td>
+                <td id =rowDisplay class="select exercise-prescription-field" style="text-align: center;">{{log.activityid}}</td>
+                <td id =rowDisplay class="select domain-field" style="text-align: center;">{{log.domainid}}</td>
+                <td class="text-field minutes-field" style="text-align: center;">{{log.minutes_spent}}</td>
+                <td class="desc-field" colspan="8" style="text-align: center;">{{log.activitydesc}}</td>
                 <th><button class="seeLogs" onclick="submitUpdate({{log.logid}}, this)">Submit</button></th>
+            </tr>
+            <tr>
+                
             </tr>
             {% endfor %}
         </table>

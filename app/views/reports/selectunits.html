@@ -1,0 +1,65 @@
+<!-- Sean Ledesma (22752771) -->
+{% extends 'templates/auth_area.html' %}
+{% set active_page = 'student' %}
+
+{% block head %}
+{% endblock %}
+
+{% block header %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/reports.css') }}">
+    <script>
+
+    </script>
+{% endblock %}
+
+{% block content %}
+<h3 id="studentTitle"><div>Student Unit Reports</div></h3>
+
+<div id = "searchContainer">
+<a href='/reports/student'><button class="backButton" style="float: right">Back to search</button></a>
+
+
+</div>
+
+<div id='pdfcontainer'></div>
+<div class="tableContainer card">
+        <table id="cohortTable">
+        <form method="POST" action="/reports/student/{{ student_number }}/"> <!-- form start -->
+
+          <thead>
+            <tr id="headerRow">
+              <th>Results</th>
+              <th id="std_num">{{(student_number|string).zfill(8)}}</th>
+              <th><button class="functionButton"><i class="fa fa-sort-amount-desc" aria-hidden="true"></i>  Sort</button></th>
+              <th><button class="functionButton"><i class="fa fa-filter" aria-hidden="true"></i>  Filter</button></th>
+            </tr>
+      
+            <tr id="headerRow2">
+              <th>Cohort Unit ID</th>
+              <th> Cohort Name</th>
+              <th>Selected Cohort</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for unit_id, unit_name in data.units %}
+            <tr>
+              <td class="cohort-unit-field">{{unit_id }}</td>
+              <td class="cohort-year-field">{{unit_name}}</td>
+              <td><input type="checkbox" id={{unit_name}} name="units" value={{unit_id}}></td>
+              <td></td>
+            </tr>
+            {% endfor %}
+            <tr>
+              <td></td>
+              <td></td>
+              <td><input type="submit" value="Generate Report"></td> <!-- submit button inside the form -->
+            </tr>
+          </tbody>
+        </form> <!-- form end -->
+        
+        </table>
+      
+
+    
+{% endblock %}

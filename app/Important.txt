@@ -1,0 +1,52 @@
+Fix PDF For Cohort, Units
+
+
+3.1 Add post request for clearing and reloading database
+3.2 Create Listener For Description, Don't Wrap until event listener mouse presses Description then display Full Message
+
+3.3 Add Batch Report Full Hours
+
+3. Practicum Placements for Students add page
+
+4.1 Add Unit for Placements
+
+4. Create Log Page
+
+5. Edit Feature For description Change String
+
+Hours Notes
+Batch Changes
+
+
+Add Unit to Selection
+
+Create Meta File?
+Read Files for Practicums
+Load to Database
+
+Create Multiple Table Reports for Each Selected Unit
+Cannot Parse Activity Through json
+Parse Through Excel
+
+Investigate JSON Response Where does it come from how come it only gets one text??
+
+Reports Displays specific rows from all UNITS Selected. Recreate Row so that for every loop for a unitid, create a table based on that and repeat.
+
+
+Adding Unit Removal
+
+A lookup table based on the json reponses is made
+a csv file is then downloaded
+Based on the lookup table the CSV finds all the specified responses of the rows based on the lookuptable id's
+
+sample:
+LABEL LOOKUP:{    
+'Name': 'QID1', 'Student Number': 'QID89', 
+'Unit Code': 'QID90', 'Service Date': 'QID44', 
+'Location': 'QID2', 'Supervisor': 'QID86', 'Number of Logs': 'QID41', 
+'Activity Type': 'QID9', 'Domain': 'QID3', 
+'Minutes': 'QID6'}
+
+it uses lookup_embedded_text to get the response_val
+
+FIND ALL INSTANCES OF _QID11_TEXT

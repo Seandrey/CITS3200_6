@@ -1,0 +1,45 @@
+<!-- Author: Lara Posel (22972221), Joel Phillips (22967051) -->
+{% extends 'templates/auth_area.html' %}
+{% set active_page = 'student' %}
+
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/reports.css') }}">
+
+
+    <!-- <script src="{{ url_for('static', filename='js/edit.js') }}" defer></script> -->
+{% endblock %}
+
+{% block content %}
+
+<a href='/reports/student/{{data.student.student_number}}/{{unit_values}}'><button class="backButton" style="float: right">Back to search</button></a>
+    <h4>Activity Logs Notes for {{new_data.student.name}} ({{(data.student.student_number|string).zfill(8)}})</h3>
+    <div class="card">
+        <table id="activity-log-table">
+            <tr>
+                <th>Date</th>
+                <th>Unit</th>
+                <th>Placement Location</th>
+                <th>Primary Supervisor</th>
+                <th>Category</th>
+                <th>Domain</th>
+                <th>Minutes</th>
+            </tr>
+            {% for log in logs %}
+            <tr >
+                <td style="white-space: normal; word-break: break-all;">{{log.record_date}}</td>
+                <td id =rowDisplay class="select unit-field">{{log.unit.unit}}</td>
+                <td>{{log.location.location}}</td>
+                <td class="select supervisor-field">{{log.supervisor.name}}</td>
+                <td>{{log.activity.activity}}</td>
+                <td>{{log.domain.domain}}</td>
+                <td>{{log.minutes_spent}}</td>
+            </tr>
+            <th>Description:</th>
+            <tr>
+              <td style="width: 25%" colspan=7>{{log.activitydesc}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% endblock %}

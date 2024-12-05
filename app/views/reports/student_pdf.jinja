@@ -13,6 +13,14 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/pdf.css') }}">
     {{ charts.chart_head(data, 'chartImage') }}
   </head>
+
+<style>
+  .highlight {
+      background-color: #FFBF00 ;
+
+
+  }
+</style>
   <body>
   <div id='wrapper'>
     <img width='100%' height='auto' class='letterhead' src={{ url_for('static', filename='assets/letterhead.png', _external=True) }}/>
@@ -27,7 +35,7 @@
       <div class='row'>
         <div class='three columns vertical-fill'>
             <div>
-                <h5>Achieved Hours - {{ 'PASSED' if ((data.required_min - data.graph.total) <= 0) else 'UNPASSED' }}</h5>
+                <h5>Hours Status: {{ 'PASSED' if ((data.units[0] - data.graph.total) <= 0) else 'UNPASSED' }}</h5>
                 <table class='u-full-width'>
                     <tr>
                       <th>Total</th>
@@ -35,12 +43,31 @@
                     </tr>
                     <tr>
                       <th>Remaining</th>
-                      <td>{{[(data.required_min - data.graph.total), 0] | max  | round(2, 'common') }}</td>
+                      <td>{{[(data.units[0] - data.graph.total), 0] | max  | round(2, 'common') }}</td>
                     </tr>
                 </table>
             </div>
         </div>
-        <div class='nine columns vertical-fill'>
+        <div class='three columns vertical-fill'>
+          <h5>Unit Report</h5>
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  Units
+                </th>
+                <th> Hours </th>
+              </tr>
+            </thead>
+          {% for unit_names in data.results%}
+            <tr>
+              <th>{{unit_names[0]}}</th>
+              <td>{{unit_names[1] | round(2, 'common')}}</td>
+            </tr>
+          {% endfor %}
+          </table>
+        </div>
+        <div class='six columns vertical-fill'>
           <div>
             <h5>HOURS BY PLACEMENT LOCATION</h5>
             <table class="u-full-width">
@@ -64,7 +91,7 @@
       </div>
       <div class="row">
         <div class='12 columns'>
-          <h5>HOURS BY ACTIVITY AND AEP DOMAIN</h5>
+          <h5>HOURS BY ACTIVITY AND AES DOMAIN</h5>
           <table class="u-full-width">
               <thead>
                   <tr>
@@ -72,7 +99,7 @@
                       <th colspan="5" style="text-align:left">Activity Type</th>
                   </tr>
                   <tr>
-                      <th>AEP Domains</th>
+                      <th>AES Domains</th>
                       {% for activity in data.activity_names %}
                       <th>{{activity.activity}}</th>
                       {% endfor %}
@@ -84,17 +111,33 @@
                 <tr>
                     <td>{{domain.domain}}</td>
                     {% for activity in data.activity_names %}
+                    {% if domain[activity.activityid] == 0 %}
                     <td>{{domain[activity.activityid] | round(2, 'common')}}</td>
+                    {% else %}
+                    <td class="highlight">{{domain[activity.activityid] | round(2, 'common')}}</td>
+                    {% endif %}
                     {% endfor %}
+                    {% if domain.total == 0 %}
                     <td>{{domain.total | round(2, 'common')}}</td>
+                    {% else %}
+                    <td class="highlight">{{domain.total | round(2, 'common')}}</td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
                 <tr>
                     <td>{{data.total_row.domain}}</td>
                     {% for activity in data.activity_names %}
+                    {% if data.total_row[activity.activityid] == 0 %}
                     <td>{{data.total_row[activity.activityid] | round(2, 'common')}}</td>
+                    {% else %}
+                    <td class="highlight">{{data.total_row[activity.activityid] | round(2, 'common')}}</td>
+                    {% endif %}
                     {% endfor %}
+                    {% if data.total_row.total == 0 %}
                     <td>{{data.total_row.total | round(2, 'common')}}</td>
+                    {% else %}
+                    <td class="highlight">{{data.total_row.total | round(2, 'common')}}</td>
+                    {% endif %}
                 </tr>
             </tbody>
           </table>

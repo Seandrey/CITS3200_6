@@ -154,6 +154,42 @@ function setup() {
 
     }
 
+    const descriptionFields = document.getElementsByClassName('desc-field');
+    const initialDesc = [];
+
+    for (let i = 0; i < descriptionFields.length; i++) {
+        initialDesc.push(descriptionFields[i].innerText);
+
+        descriptionFields[i].addEventListener('dblclick', function () {
+            this.contentEditable = 'true';
+            this.focus();
+            this.style.backgroundColor = '#ffcccc';
+            this.style.color = 'black';
+        });
+
+        descriptionFields[i].addEventListener('blur', function () {
+            this.contentEditable = 'false';
+            this.style.backgroundColor = '';
+            this.style.color = 'rgb(165, 164, 164)';
+            if (validateText(this.innerText)) {
+                this.style.color = "red";
+            } else {
+                if (this.innerText != initialDesc[i])
+                    this.style.backgroundColor = 'rgb(220, 227, 255)';
+            }
+        });
+
+        descriptionFields[i].addEventListener('keypress', function (event) {
+            if (event.key == "Enter") {
+                this.contentEditable = 'false';
+                this.style.backgroundColor = '';
+                if (this.innerText != initialDesc[i])
+                    this.style.backgroundColor = 'rgb(220, 227, 255)';
+            }
+        });
+
+    }
+
     const dateFields = document.getElementsByClassName("date-field");
     for (const dateField of dateFields) {
         dateField.addEventListener("dblclick", () => {
@@ -182,6 +218,15 @@ function validateInput(value) {
     const number = Number(value);
     if (!(Number.isInteger(number))) {
         alert("Please enter a positive integer in the minutes field.");
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function validateText(value) {
+    if (!(typeof value === 'string' || value instanceof String)) {
+        console.log("IS STRING")
         return true;
     } else {
         return false;
@@ -238,6 +283,17 @@ function getMinutesField(rowElem) {
 }
 
 /**
+ * Gets text value of activity field in certain row - Must Place Description back on row to work
+ * @param {HTMLTableRowElement} rowElem row to search inside
+ * @returns string value in desc
+ */
+function getdescriptionField(rowElem) {
+    const text = getTextField(rowElem, "desc-field");
+
+    return text;
+}
+
+/**
  * Gets date value of date field in certain row
  * @param {HTMLTableRowElement} rowElem row to search inside
  * @returns date value
@@ -278,7 +334,9 @@ function submitUpdate(id, button_elem) {
         domainid: getSelectValue(row_elem, "domain-field"),
         minutes_spent: getMinutesField(row_elem),
         record_date: getDateField(row_elem),
-        unitid: getSelectValue(row_elem, "unit-field")
+        unitid: getSelectValue(row_elem, "unit-field"),
+        // Not detecting activity desk? Act same as minutes field
+        activitydesc: getdescriptionField(row_elem)
     };
     console.log(gameObj);
 
@@ -288,7 +346,7 @@ function submitUpdate(id, button_elem) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(gameObj)
-    });
+    })
     // TODO: reload page afterwards?
 }
 

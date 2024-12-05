@@ -32,8 +32,9 @@
   position: relative;
   width: 100%;
   max-width: 960px;
-  margin: 0 auto;
+  margin: 0 20%;
   padding: 0 20px;
+  overflow-x: 10px;
   box-sizing: border-box; }
 .column,
 .columns {

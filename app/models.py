@@ -1,12 +1,12 @@
 # Database models
-# Author: Joel Phillips (22967051)
+# Author: Joel Phillips (22967051), Sean Ledesma (22752771)
 
 from flask_sqlalchemy import SQLAlchemy
 from datetime import date, time, datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app import login, db
-from sqlalchemy import JSON, func, extract
+from sqlalchemy import JSON, func, extract, Boolean
 from sqlalchemy.ext.hybrid import hybrid_property
 
 class User(UserMixin, db.Model):
@@ -106,13 +106,28 @@ class ActivityLog(db.Model):
     supervisorid = db.Column(db.Integer, db.ForeignKey(Supervisor.supervisorid))
     activityid = db.Column(db.Integer, db.ForeignKey(Activity.activityid))
     domainid = db.Column(db.Integer, db.ForeignKey(Domain.domainid))
+    unitid = db.Column(db.Integer, db.ForeignKey(Unit.unitid))
+
     minutes_spent = db.Column(db.Integer)
     record_date = db.Column(db.Date)
+
+    is_edited = db.Column(db.Integer,default=0)
+
+    "Description of Notes"
+    activitydesc = db.Column(db.String(255))
+
     """The date the service was recorded for"""
-    unitid = db.Column(db.Integer, db.ForeignKey(Unit.unitid))
     responseid = db.Column(db.String(64))
     """ID of original Qualtrics survey response. TODO is this long enough to match?"""
+    
+    unit = db.relationship('Unit', lazy='joined')
+    student = db.relationship('Student', lazy='joined')
+    location = db.relationship('Location', lazy='joined')
+    supervisor = db.relationship('Supervisor', lazy='joined')
+    domain = db.relationship('Domain', lazy='joined')
+    activity = db.relationship('Activity', lazy='joined')
 
+    # Sanity Check
     def __repr__(self):
         return f'<ActivityLog {self.logid} with student {self.studentid}, supervisor {self.supervisorid}, location {self.locationid}, activity {self.activityid}, domain {self.domainid}, unit {self.unitid}, of {self.minutes_spent} m on {self.record_date} (response {self.responseid})>'
 
@@ -132,3 +147,10 @@ class LastDbUpdate(db.Model):
 
     def __repr__(self):
         return f'<LastDBUpdate {self.updatedate} (id {self.updateid})>'
+
+# Description of Other, Prescription, Delivery, Assesment 
+class DomainDescription(db.Model):
+    "Stores the corresponding DomainDescriptions for each domain"
+    domain_description = db.Column(db.String(180))
+    domainid = db.Column(db.Integer, db.ForeignKey(Domain.domainid))
+    domain_descid = db.Column(db.Integer, primary_key=True)

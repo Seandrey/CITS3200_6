@@ -6,6 +6,8 @@
 
 <!-- Header Inserts, e.g. CSS, Scripts -->
 {% block head %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     function updateQualtricsData() {
         const update_text = document.getElementById("qualtrics-update-txt");
@@ -19,6 +21,36 @@
                 update_text.innerText = "Failed. Please try again later.";
         });
     }
+
+    function cleanDatabase() {
+        const update_text = document.getElementById("database-update-text");
+        update_text.innerText = "Clearing...";
+        fetch("/cleardb", {
+            method: "POST"
+        }).then((response) => {
+            if (response.ok) 
+                update_text.innerText = "cleared DB!";
+            else
+                update_text.innerText = "Failed. Please try again later.";
+        });
+    }
+
+    $(document).ready(function() {
+    $('#add-prac').submit(function(event) {
+      event.preventDefault();  // prevent default form submission
+      var formData = $(this).serialize();  // get form data as serialized string
+      $.ajax({
+        type: 'POST',
+        url: '/addPrac',
+        data: formData,
+        success: function(response) {
+          console.log(response);  // log response from Flask endpoint
+          $('#prac-response').text(response.message);
+        }
+      });
+    });
+  });
+
 </script>
 {% endblock %}
 
@@ -27,4 +59,18 @@
     <p>Welcome to Logbook Database</p>
     <button onclick="updateQualtricsData()">Update data from Qualtrics</button>
     <p id="qualtrics-update-txt"></p>
+
+    <button onclick="cleanDatabase()">Clean Database</button>
+    <p id="database-update-text"></p>
+
+    <br>
+    <div>
+        <form id="add-prac">
+            <label for="unit_name">Unit Name</label>
+            <input type="text" name="unit_name" value="Practicum ...">
+            <br>
+            <button type="submit" id="submit-btn">Submit</button>
+          </form>
+    </div>
+    <div id="prac-response"></div>
 {% endblock %}

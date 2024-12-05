@@ -26,10 +26,6 @@
     width: auto;
 }
 
-#backButton button{
-    style: auto;
-}
-
 #unit-field{
     white-space: pre-wrap;
     width: auto;
@@ -49,7 +45,6 @@ table {
 
 .container { 
     height: 90%; 
-    padding-right: 200px;
 
 }
 
@@ -92,7 +87,7 @@ h1 {
 }
 
 .tableContainer th:first-child {
-    padding-left: x; 
+    padding-left: 50px; 
     width: 30%; 
 }
 

@@ -13,8 +13,6 @@ venv/*
 # VS code workspace
 *.code-workspace
 
-# Database
-app/app.db
 
 # Qualtrics test files
 MyQualtricsDownload/*

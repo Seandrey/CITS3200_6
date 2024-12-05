@@ -26,12 +26,21 @@ NUM_ACTIVITY_LOGS = "Number of Logs"
 CATEGORY = "Activity Type"
 AEP_DOMAIN = "Domain"
 MINUTES_SPENT = "Minutes"
+# Just Find on of the description as they have all the same Lookup ID
 
 
+def Debuggerlog(error_message):
+    try:
+        with open('log.txt', 'a') as file:
+            file.write(error_message+'\n')
+    except:
+        print("Error writing to log.txt file.")
+
+# Downloads Respective QID and Survery Name Title for Label Lookup
 def download_zip(survey_id: str, api_token: str, data_centre: str):
     """
     Code based on Qualtrics API example: https://api.qualtrics.com/ZG9jOjg3NzY3Nw-new-survey-response-export-guide
-    Downloads a CSV file. This is not intended behaviour
+    Downloads a JSON file.
     """
 
     # set static params
@@ -54,8 +63,7 @@ def download_zip(survey_id: str, api_token: str, data_centre: str):
 
     # get to UTC
     last_date_utc = last_update.updatedate - timedelta(hours=8)
-    print(last_date_utc.isoformat())
-
+    # Debuggerlog(last_date_utc.isoformat())
     # 1: create data export
     data = {
         "format": "json", # JSON seems more difficult to use. See if can parse CSV adequately
@@ -67,12 +75,12 @@ def download_zip(survey_id: str, api_token: str, data_centre: str):
     }
 
     download_req_response = requests.request("POST", url, json=data, headers=headers)
-    print(download_req_response.json())
+    Debuggerlog(f'req response: {download_req_response.json()} \n')
 
     try:
         progress_id = download_req_response.json()["result"]["progressId"]
     except KeyError:
-        print(download_req_response.json())
+        Debuggerlog(f"Donwload Req_response + {download_req_response.json()}")
         sys.exit(2)
     assert progress_id is not None, "progress_id is none!"
     
@@ -81,18 +89,18 @@ def download_zip(survey_id: str, api_token: str, data_centre: str):
     # 2: check on data export progress and wait until export ready
     while progress_status != "complete" and progress_status != "failed" and isFile is None:
         if isFile is None:
-            print("file not ready")
+            Debuggerlog("file not ready")
         else:
-            print("progress_status=", progress_status)
+            Debuggerlog("progress_status=", progress_status)
         request_check_url = url + progress_id
         request_check_response = requests.request("GET", request_check_url, headers=headers)
         try:
             isFile = request_check_response.json()["result"]["fileId"]
         except KeyError:
             1 == 1
-        print(request_check_response.json())
+        Debuggerlog(f"{request_check_response.json()}")
         request_check_progress = request_check_response.json()["result"]["percentComplete"]
-        print("Download is " + str(request_check_progress) + " complete")
+        Debuggerlog("Download is " + str(request_check_progress) + " complete")
         progress_status = request_check_response.json()["result"]["status"]
     
     # check for error
@@ -107,8 +115,9 @@ def download_zip(survey_id: str, api_token: str, data_centre: str):
 
     # 4: unzip file
     zipfile.ZipFile(io.BytesIO(request_download.content)).extractall("MyQualtricsDownload")
-    print("complete")
+    Debuggerlog("complete")
 
+# Downloads Response Survey Detecting Key 
 def load_json(filename: str) -> dict[str, list[dict]]:
     """Loads JSON file to python dictionary"""
     with open(filename) as file:
@@ -121,7 +130,7 @@ def load_json(filename: str) -> dict[str, list[dict]]:
         assert len(data["responses"]) == 0 or isinstance(data["responses"][0], dict), "individual response not dict!"
 
         return data
-    # TODO: delete JSON file
+
 
 class DummyLogModel:
     """Temporary class to act as model for log book main - has some fields required"""
@@ -133,10 +142,12 @@ class DummyLogModel:
         self.activity = activity
         self.domain = domain
         self.min_spent = min_spent
+        # TODO: DO I ADD ACTIVITY_DESCRIPTION HERE?
     
     def __repr__(self) -> str:
         return f"<{self.student}, {self.supervisor}, {self.location}, {self.activity}, {self.domain}, {self.min_spent}>"
 
+# Looksup Labels Class
 class LabelLookup:
     """Class to lookup labels in more intelligent way"""
 
@@ -155,9 +166,13 @@ class LabelLookup:
         """Based on JSON having '_TEXT' suffix for text"""
         return f'{self[key]}_TEXT'
 
+def DescActivityLookup():
+    """Lookup Description Activity for activities"""
+    return ''
+
 def get_answer_label(json_response: dict[str, dict[str, str]], key: str) -> str:
     """Gets answer label for given question name key"""
-    print("DEBUG: looking up in labels: ", key)
+    Debuggerlog(f"DEBUG: looking up in labels: , {key}")
     return json_response["labels"][key]
 
 def make_n_text(text: str, iteration: int) -> str:
@@ -168,23 +183,28 @@ def get_answer_label_n(json_response: dict[str, dict[str, str]], key: str, itera
     """Gets answer label for a given question name key of a given iteration"""
     return get_answer_label(json_response, make_n_text(key, iteration))
 
+# Called By ...
 def lookup_embedded_text(response_val: dict[str, str], label_lookup: LabelLookup, label_name: str) -> str:
     """Lookup text embedded in JSON (with _TEXT suffix)"""
 
-    print("DEBUG---")
-    print("Key: ", label_lookup.get_text(label_name))
-    print("Response_val:", response_val)
-    print("END DEBUG---")
+    Debuggerlog(" ")
+    Debuggerlog(f"Key: , {label_lookup.get_text(label_name)}")
+    Debuggerlog(f"Response_val:, {response_val}")
+    Debuggerlog(" ")
 
     return response_val[label_lookup.get_text(label_name)]
 
+# Looks at where it is called
 def get_multi_label(json_response: dict[str, dict[str, str]], multi_lookup: list[str], original_lookup: str) -> str:
     """Lookup answer label for a multi-label question (i.e. many mutually-exclusive questions sharing same label)"""
     labels = json_response["labels"]
+
+
     for qid in multi_lookup:
+        # Error could be that it didnt find ANY QID for Supervisor Lookup BECAUSE THE SURVEY DOESNT HAVE A SUPERVISOR SELECTED
         if qid in labels:
             return labels[qid]
-    raise Exception(f"failed to find key '{original_lookup}' in labels")
+    raise Exception(f"Failed to find QID Key for Supervisor, Does the response have a Supervisor? Response ID: {json_response['responseid']} \n Debuggerloging Original Lookup: '{original_lookup}' in labels  \n Printing qid: {qid} \n Printing Label Logs {labels} \n {json_response} \n")
     return ""
 
 dbModel = TypeVar("dbModel", bound=db.Model)
@@ -220,6 +240,46 @@ def add_known_choices(label_lookup: LabelLookup, format: dict[str, dict]):
 
     add_known_choices_from_q(label_lookup[AEP_DOMAIN], questions_map, Domain, "domain")
 
+# Bypass LabelLookup Class and Look Directly
+# STATIC TESTING
+STATIC_DESCRIPTION_ID = ['1_QID11_TEXT','2_QID11_TEXT','3_QID11_TEXT','4_QID11_TEXT','5_QID11_TEXT',
+                         '6_QID11_TEXT','7_QID11_TEXT','8_QID11_TEXT','9_QID11_TEXT','10_QID11_TEXT',
+                         '11_QID11_TEXT','12_QID11_TEXT']
+
+
+# Don't Know which description is most important so aggregatted all of the together
+# Function finds all instances of Activity Descriptions in the json["values"] and stores them as a large string
+# Based on a static list of Lookup ID's Corresponding to the Activity Description Columns
+def filter_dict_by_substring(dct, substring):
+    filtered_dict = {key: value for key, value in dct.items() if substring in key}
+    return filtered_dict
+
+def remove_duplicate_values(dct):
+    unique_values = set(dct.values())
+    unique_dict = {}
+    for key, value in dct.items():
+        if value in unique_values:
+            unique_dict[key] = value
+            unique_values.remove(value)
+    return unique_dict
+
+def getdescriptions(response_val: dict):
+    string = ""
+    text_dict = filter_dict_by_substring(response_val, '_QID11_TEXT')
+    uni_dict = remove_duplicate_values(text_dict)
+    if len(uni_dict) != 0:
+        for key,value in uni_dict.items():
+            string += value
+    else:
+        string = "No Description Given"
+    return string
+
+
+
+def badresponse(response: any):
+    # print(f'BAD RESPONSE:{response}\n')
+    print("BAD RESPONSE\n")
+
 def test_parse_json(json_file: dict[str, list[dict]], label_lookup: LabelLookup, format: dict[str, dict]) -> None:
     """Try to parse JSON representation of dict? Assumed format below"""
 
@@ -237,34 +297,62 @@ def test_parse_json(json_file: dict[str, list[dict]], label_lookup: LabelLookup,
 
         student_name = lookup_embedded_text(response_val, label_lookup, STUDENT_NAME)
         student_number = lookup_embedded_text(response_val, label_lookup, STUDENT_NUMBER)
+
+        # Lookup embedded Text
+        # notes_description = lookup_embedded_text(response_val, label_lookup, ACTIVITY_DESCRIPTION_NAMES)
+        
+        # Get Description Brief Notes
+
+
         student_number_int: int = 0
         try:
             student_number_int = int(student_number, base=10)
         except ValueError:
             print(f"failed to parse '{student_number}' to int (student number). skipping response")
+            badresponse(response_val)
             continue
         student: Optional[Student] = Student.query.filter_by(student_number=student_number_int).one_or_none()
         if student is None:
             student = Student(student_number=student_number_int, name=student_name)
             db.session.add(student)
         # TODO changes in how differing student names for same ID are handled? currently just ignores name change
-        if student.name != student_name:
-            print(f"Warning: student ID {student.student_number} previously named as '{student.name}', new response names as '{student_name}'")
+        # if student.name != student_name:
+            # print(f"Warning: student ID {student.student_number} previously named as '{student.name}', new response names as '{student_name}'")
 
         service_date = lookup_embedded_text(response_val, label_lookup, SERVICE_DATE)
         service_date_datetime: datetime = 0
         try:
             service_date_datetime = datetime.strptime(service_date, "%d/%m/%Y")
+            service_date_string = service_date_datetime.strftime("%Y-%m-%d")
         except ValueError:
-            print(f"failed to parse '{service_date}' to datetime (service date). skipping response")
+            print(f"WARNING: failed to parse '{service_date}' to datetime (service date). skipping response")
+            warninglog(f"WARNING: failed to parse '{service_date}' to datetime (service date).)")
+            
+
+            # Warning Dump Message
+            warninglog(f'recordedDate: {response_val["recordedDate"]}')
+            warninglog(f'RecordId: {response_val["_recordId"]}')
+            warninglog(f'Service Date: {service_date}')
+            warninglog(f'StudName:{student_name}')
+            warninglog(f'StudID:{student_number}\n')
+            # warninglog(f'Unit:{get_answer_label(response, label_lookup[UNIT_CODE])}')
+            # warninglog(f'Loc:{get_answer_label(response, label_lookup[PLACEMENT_LOCATION])}')
+            # warninglog(f'Supervisor:{get_multi_label(response, supervisor_lookup, PLACEMENT_SUPERVISOR)}\n')
+            # warningDump(response_val)
+
+
+
+
             continue
-        service_date_date: date = service_date_datetime.date()
+        
+        service_date_date = datetime.strptime(service_date_string, "%Y-%m-%d").date()
 
         placement_loc = get_answer_label(response, label_lookup[PLACEMENT_LOCATION])
         location = get_or_add_db(Location, {"location": placement_loc})
 
         # supervisor is more complicated as has multiple questions as implementation. so use multi lookup
         supervisor_lookup = get_multi_lookup(format, PLACEMENT_SUPERVISOR)
+        # Debuggerlog(f'Supervisor Lookup f{supervisor_lookup}')
         supervisor_name = get_multi_label(response, supervisor_lookup, PLACEMENT_SUPERVISOR)
         supervisor = get_or_add_db(Supervisor, {"name": supervisor_name})
 
@@ -300,10 +388,10 @@ def test_parse_json(json_file: dict[str, list[dict]], label_lookup: LabelLookup,
                 session = db.session
             # TODO: probably don't need this anymore
 
-            aep_domain = get_answer_label_n(response, label_lookup[AEP_DOMAIN], i)
-            domain: Optional[Domain] = Domain.query.filter_by(domain=aep_domain).one_or_none()
+            aes_domain = get_answer_label_n(response, label_lookup[AEP_DOMAIN], i)
+            domain: Optional[Domain] = Domain.query.filter_by(domain=aes_domain).one_or_none()
             if domain is None:
-                domain = Domain(domain=aep_domain)
+                domain = Domain(domain=aes_domain)
                 session.add(domain)
                 session.commit()
                 session = db.session
@@ -316,15 +404,30 @@ def test_parse_json(json_file: dict[str, list[dict]], label_lookup: LabelLookup,
             except ValueError:
                 print(f"Failed to parse '{minutes}' (minutes) to int! Ignoring log")
                 continue
+            
+            # TODO: ADD FEATURE TO DESCRIPTION ACITIVTY MAKE SURE LABEL LOOKUP ADDS VALUE OF DESCRIPTION_ACTIVITY
+            # activity_description = label_lookup[DESCRIPTION_ACTIVITY]
+            
+            
+            # try:
+            #     notes = response_val[ACTIVITY_DESCRIPTION]
+            #     Debuggerlog("description EXISTS :)")
+            # except KeyError:
+            #     Debuggerlog("No Description")
+            #     notes = "No Description"
+            notes = getdescriptions(response_val)
 
-            log_row = ActivityLog(studentid=student.studentid, locationid=location.locationid, supervisorid=supervisor.supervisorid, activityid=activity.activityid, domainid=domain.domainid, minutes_spent=minutes_int, record_date=service_date_date, unitid=unit.unitid, responseid=response_id)
+
+            log_row = ActivityLog(studentid=student.studentid, locationid=location.locationid, supervisorid=supervisor.supervisorid, activityid=activity.activityid, domainid=domain.domainid, minutes_spent=minutes_int, record_date=service_date_date, unitid=unit.unitid, responseid=response_id, \
+                                  activitydesc= notes
+                                  )
             session.add(log_row)
 
     # update date
     last_update: LastDbUpdate = LastDbUpdate.query.one()
     # make this a bit before current in case responses received in meantime
     last_update.updatedate = datetime.now() - timedelta(hours=1)
-    print(last_update)
+    # Debuggerlog(f"LastUpdate - {last_update}")
 
     session: scoped_session = db.session
     session.commit()
@@ -337,43 +440,48 @@ def get_survey_format(survey_id: str, api_token: str, data_centre: str) -> dict[
     headers = {"x-api-token": api_token}
 
     response = requests.get(base_url, headers=headers)
-    print("DEBUG: response start---")
-    print(response.text)
-    print("DEBUG: response end---")
+    # Debuggerlog("DEBUG: response start---")
+    # Debuggerlog(response.text)
+    # Debuggerlog("DEBUG: response end---")
 
     # should have a json form, with "result" field. Under "result", has exportColumnMap
+    # Find Activity Description
+    print(f"DEBUGGER RESPONSE: {response.json}")
     return response.json()
 
-def get_label_lookup_old(survey_format_json: dict[str, dict]) -> dict[str, str]:
-    """Gets label lookup map from less useful Qualtrics form.
-    NOTE: this implementation abandoned. exportColumnMap seems to have less useful data than I thought - 
-    does not have textual column description. Instead trying another way"""
+# def get_label_lookup_old(survey_format_json: dict[str, dict]) -> dict[str, str]:
+#     """Gets label lookup map from less useful Qualtrics form.
+#     NOTE: this implementation abandoned. exportColumnMap seems to have less useful data than I thought - 
+#     does not have textual column description. Instead trying another way"""
 
-    bad_map = survey_format_json["result"]["exportColumnMap"]
+#     bad_map = survey_format_json["result"]["exportColumnMap"]
 
-    print("DEBUG: export column map---")
-    print(bad_map)
-    print("DEBUG: end export column map---")
+#     Debuggerlog("DEBUG: export column map---")
+#     Debuggerlog(bad_map)
+#     Debuggerlog("DEBUG: end export column map---")
 
-    print(type(bad_map["Q1"]))
-    print(type(bad_map["Q1"]["question"]))
+#     Debuggerlog(type(bad_map["Q1"]))
+#     Debuggerlog(type(bad_map["Q1"]["question"]))
     
-    # now, extract a str-str dictionary from that
-    label_lookup: dict[str, str] = {key: value["question"] for (key, value) in bad_map.items()}
-    return label_lookup
+#     # now, extract a str-str dictionary from that
+#     label_lookup: dict[str, str] = {key: value["question"] for (key, value) in bad_map.items()}
+#     return label_lookup
 
+
+# Called By get Survey Format
 def get_label_lookup(survey_format_json: dict[str, dict]) -> LabelLookup:
     """Gets label lookup map in form: {"Student Name": "QID1"}. Will not work correctly if names are not unique."""
     questions_map: dict = survey_format_json["result"]["questions"]
 
-    print("DEBUG: export questions map---")
-    print(questions_map)
-    print("DEBUG: end questions column map---")
+    # Debuggerlog("DEBUG: export questions map---")
+    # Debuggerlog(questions_map)
+    # Debuggerlog("DEBUG: end questions column map---")
 
     # now, extract a str-str dictionary from that
     #label_lookup: dict[str, str] = {value["questionText"]: key for (key, value) in questions_map.items()}
     label_lookup: dict[str, str] = {}
     for key, value in questions_map.items():
+        Debuggerlog(f'val:{value} key{key}')
         if "questionLabel" in value and value["questionLabel"] is not None:
             label_lookup[value["questionLabel"]] = key
 
@@ -392,6 +500,9 @@ def get_multi_lookup(survey_format_json: dict[str, dict], desired_key: str) -> l
     multi_lookup: list[str] = [key for (key, value) in questions_map.items() if value["questionLabel"] == desired_key]
 
     return multi_lookup
+
+
+# 
 
 # JSON format (apparently):
 """
